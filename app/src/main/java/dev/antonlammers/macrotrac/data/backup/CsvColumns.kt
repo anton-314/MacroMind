@@ -14,11 +14,15 @@ object CsvColumns {
     const val PROTEIN_G = "protein_g"
     const val CARBS_G = "carbs_g"
     const val FAT_G = "fat_g"
+    const val SUGAR_G = "sugar_g"
+    const val FIBER_G = "fiber_g"
+    const val MEAL_CATEGORY = "meal_category"
     const val TIMESTAMP_MS = "timestamp_ms"
 
     val HEADER: String = listOf(
         DATE, FOOD_NAME, BRAND, AMOUNT_GRAMS,
         KCAL, PROTEIN_G, CARBS_G, FAT_G,
+        SUGAR_G, FIBER_G, MEAL_CATEGORY,
         TIMESTAMP_MS,
     ).joinToString(",")
 }

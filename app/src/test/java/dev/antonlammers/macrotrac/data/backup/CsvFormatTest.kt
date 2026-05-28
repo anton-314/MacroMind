@@ -1,6 +1,7 @@
 package dev.antonlammers.macrotrac.data.backup
 
 import dev.antonlammers.macrotrac.domain.model.FoodEntry
+import dev.antonlammers.macrotrac.domain.model.MealCategory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -14,7 +15,7 @@ class CsvFormatTest {
 
     @Test
     fun `parseLine splits simple row`() {
-        val cols = CsvFormat.parseLine("2026-05-28,Apfel,,150.0,78.0,0.5,21.0,0.3,1748000000000")
+        val cols = CsvFormat.parseLine("2026-05-28,Apfel,,150.0,78.0,0.5,21.0,0.3,2.0,1.5,SNACK,1748000000000")
         assertEquals("2026-05-28", cols[0])
         assertEquals("Apfel", cols[1])
         assertEquals("", cols[2])
@@ -23,13 +24,13 @@ class CsvFormatTest {
 
     @Test
     fun `parseLine handles quoted field with comma`() {
-        val cols = CsvFormat.parseLine("2026-05-28,\"Hähnchen, gegrillt\",,200.0,240.0,48.0,0.0,5.0,1748000000000")
+        val cols = CsvFormat.parseLine("2026-05-28,\"Hähnchen, gegrillt\",,200.0,240.0,48.0,0.0,5.0,0.0,0.0,LUNCH,1748000000000")
         assertEquals("Hähnchen, gegrillt", cols[1])
     }
 
     @Test
     fun `parseLine handles escaped quote inside quoted field`() {
-        val cols = CsvFormat.parseLine("2026-05-28,\"Bio\"\"Joghurt\",,150.0,90.0,6.0,9.0,3.0,1748000000000")
+        val cols = CsvFormat.parseLine("2026-05-28,\"Bio\"\"Joghurt\",,150.0,90.0,6.0,9.0,3.0,0.0,0.0,BREAKFAST,1748000000000")
         assertEquals("Bio\"Joghurt", cols[1])
     }
 
@@ -70,29 +71,43 @@ class CsvFormatTest {
 
     @Test
     fun `fromRow uses defaults for missing optional columns`() {
-        // Only date and food_name present
         val sparseHeaders = mapOf(CsvColumns.DATE to 0, CsvColumns.FOOD_NAME to 1)
         val entry = CsvFormat.fromRow("2026-05-28,Ei", sparseHeaders)!!
         assertEquals(100.0, entry.amountGrams, 0.001)
         assertEquals(0.0, entry.kcal, 0.001)
         assertEquals(LocalDate.parse("2026-05-28"), entry.date)
+        assertEquals(0.0, entry.sugarG, 0.001)
+        assertEquals(0.0, entry.fiberG, 0.001)
     }
 
     @Test
     fun `fromRow with extra columns parses known fields correctly`() {
-        val extendedHeader = "${CsvColumns.HEADER},fiber_g"
+        val extendedHeader = "${CsvColumns.HEADER},unknown_col"
         val extendedHeaders = CsvFormat.parseHeaders(extendedHeader)
         val base = buildEntry()
-        val row = "${CsvFormat.toRow(base)},3.5"
+        val row = "${CsvFormat.toRow(base)},somevalue"
         val parsed = CsvFormat.fromRow(row, extendedHeaders)!!
         assertEquals(base.kcal, parsed.kcal, 0.001)
         assertEquals(base.foodName, parsed.foodName)
+    }
+
+    @Test
+    fun `toRow and fromRow round-trip preserves sugar fiber and mealCategory`() {
+        val entry = buildEntry(sugarG = 5.5, fiberG = 2.3, mealCategory = MealCategory.LUNCH)
+        val row = CsvFormat.toRow(entry)
+        val parsed = CsvFormat.fromRow(row, headers)!!
+        assertEquals(entry.sugarG, parsed.sugarG, 0.001)
+        assertEquals(entry.fiberG, parsed.fiberG, 0.001)
+        assertEquals(entry.mealCategory, parsed.mealCategory)
     }
 
     private fun buildEntry(
         foodName: String = "Test",
         brand: String? = "TestBrand",
         amountGrams: Double = 100.0,
+        sugarG: Double = 0.0,
+        fiberG: Double = 0.0,
+        mealCategory: MealCategory = MealCategory.SNACK,
     ) = FoodEntry(
         foodName = foodName,
         brand = brand,
@@ -101,6 +116,9 @@ class CsvFormatTest {
         proteinG = 10.0,
         carbsG = 25.0,
         fatG = 8.0,
+        sugarG = sugarG,
+        fiberG = fiberG,
+        mealCategory = mealCategory,
         date = LocalDate.of(2026, 5, 28),
         timestampMs = 1748000000000L,
     )

@@ -19,7 +19,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "macrotrac.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "macrotrac.db")
+            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .build()
 
     @Provides
     fun provideFoodEntryDao(db: AppDatabase): FoodEntryDao = db.foodEntryDao()

@@ -199,5 +199,7 @@ class AddFoodViewModelTest {
         proteinPer100g = 0.3,
         carbsPer100g = 14.0,
         fatPer100g = 0.2,
+        sugarPer100g = 10.0,
+        fiberPer100g = 2.4,
     )
 }

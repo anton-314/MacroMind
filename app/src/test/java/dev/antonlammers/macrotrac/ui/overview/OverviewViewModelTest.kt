@@ -118,6 +118,8 @@ class OverviewViewModelTest {
         proteinG = 10.0,
         carbsG = 20.0,
         fatG = 5.0,
+        sugarG = 3.0,
+        fiberG = 1.5,
         date = date,
         timestampMs = System.currentTimeMillis(),
     )

@@ -1,8 +1,11 @@
 package dev.antonlammers.macrotrac.ui.addfood
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -17,6 +20,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -38,6 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import dev.antonlammers.macrotrac.domain.model.Food
+import dev.antonlammers.macrotrac.domain.model.MealCategory
 import dev.antonlammers.macrotrac.ui.navigation.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,7 +75,9 @@ fun AddFoodScreen(
         AmountDialog(
             food = food,
             amount = state.amountGrams,
+            mealCategory = state.mealCategory,
             onAmountChange = viewModel::onAmountChange,
+            onMealCategoryChange = viewModel::onMealCategoryChange,
             onConfirm = viewModel::confirmAdd,
             onDismiss = viewModel::dismissSelection,
         )
@@ -167,11 +174,14 @@ private fun FoodResultRow(food: Food, onClick: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AmountDialog(
     food: Food,
     amount: String,
+    mealCategory: MealCategory,
     onAmountChange: (String) -> Unit,
+    onMealCategoryChange: (MealCategory) -> Unit,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -179,13 +189,26 @@ private fun AmountDialog(
         onDismissRequest = onDismiss,
         title = { Text(food.name) },
         text = {
-            OutlinedTextField(
-                value = amount,
-                onValueChange = onAmountChange,
-                label = { Text("Menge (g)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = amount,
+                    onValueChange = onAmountChange,
+                    label = { Text("Menge (g)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text("Mahlzeit", style = MaterialTheme.typography.labelMedium)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MealCategory.entries.forEach { cat ->
+                        FilterChip(
+                            selected = cat == mealCategory,
+                            onClick = { onMealCategoryChange(cat) },
+                            label = { Text(cat.displayName()) },
+                        )
+                    }
+                }
+            }
         },
         confirmButton = {
             TextButton(onClick = onConfirm) { Text("Hinzufügen") }
@@ -194,4 +217,11 @@ private fun AmountDialog(
             TextButton(onClick = onDismiss) { Text("Abbrechen") }
         },
     )
+}
+
+private fun MealCategory.displayName() = when (this) {
+    MealCategory.BREAKFAST -> "Frühstück"
+    MealCategory.LUNCH -> "Mittagessen"
+    MealCategory.DINNER -> "Abendessen"
+    MealCategory.SNACK -> "Snack"
 }

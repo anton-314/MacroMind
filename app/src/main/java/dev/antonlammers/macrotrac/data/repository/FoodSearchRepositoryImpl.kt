@@ -23,6 +23,8 @@ class FoodSearchRepositoryImpl @Inject constructor(
             proteinPer100g = nutriments.proteinPer100g ?: 0.0,
             carbsPer100g = nutriments.carbsPer100g ?: 0.0,
             fatPer100g = nutriments.fatPer100g ?: 0.0,
+            sugarPer100g = nutriments.sugarPer100g ?: 0.0,
+            fiberPer100g = nutriments.fiberPer100g ?: 0.0,
         )
     }
 
@@ -38,6 +40,8 @@ class FoodSearchRepositoryImpl @Inject constructor(
                 proteinPer100g = nutriments.proteinPer100g ?: 0.0,
                 carbsPer100g = nutriments.carbsPer100g ?: 0.0,
                 fatPer100g = nutriments.fatPer100g ?: 0.0,
+                sugarPer100g = nutriments.sugarPer100g ?: 0.0,
+                fiberPer100g = nutriments.fiberPer100g ?: 0.0,
             )
         }
     }

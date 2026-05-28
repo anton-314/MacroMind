@@ -3,6 +3,7 @@ package dev.antonlammers.macrotrac.data.repository
 import dev.antonlammers.macrotrac.data.local.dao.FoodEntryDao
 import dev.antonlammers.macrotrac.data.local.entity.FoodEntryEntity
 import dev.antonlammers.macrotrac.domain.model.FoodEntry
+import dev.antonlammers.macrotrac.domain.model.MealCategory
 import dev.antonlammers.macrotrac.domain.repository.FoodEntryRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -33,6 +34,9 @@ class FoodEntryRepositoryImpl @Inject constructor(
         proteinG = proteinG,
         carbsG = carbsG,
         fatG = fatG,
+        sugarG = sugarG,
+        fiberG = fiberG,
+        mealCategory = runCatching { MealCategory.valueOf(mealCategory) }.getOrDefault(MealCategory.SNACK),
         date = LocalDate.parse(date),
         timestampMs = timestampMs,
     )
@@ -46,6 +50,9 @@ class FoodEntryRepositoryImpl @Inject constructor(
         proteinG = proteinG,
         carbsG = carbsG,
         fatG = fatG,
+        sugarG = sugarG,
+        fiberG = fiberG,
+        mealCategory = mealCategory.name,
         date = date.toString(),
         timestampMs = timestampMs,
     )

@@ -8,4 +8,6 @@ data class Food(
     val proteinPer100g: Double,
     val carbsPer100g: Double,
     val fatPer100g: Double,
+    val sugarPer100g: Double = 0.0,
+    val fiberPer100g: Double = 0.0,
 )

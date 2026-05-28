@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import dev.antonlammers.macrotrac.domain.model.FoodEntry
+import dev.antonlammers.macrotrac.domain.model.MealCategory
 import dev.antonlammers.macrotrac.ui.navigation.Screen
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -91,9 +92,21 @@ fun OverviewScreen(
                     }
                 }
             } else {
-                items(state.entries, key = { it.id }) { entry ->
-                    FoodEntryRow(entry = entry, onDelete = { viewModel.delete(entry.id) })
-                    HorizontalDivider()
+                val grouped = state.entries.groupBy { it.mealCategory }
+                MealCategory.entries.forEach { category ->
+                    val categoryEntries = grouped[category] ?: return@forEach
+                    item(key = category.name) {
+                        Text(
+                            category.displayName(),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 2.dp),
+                        )
+                    }
+                    items(categoryEntries, key = { it.id }) { entry ->
+                        FoodEntryRow(entry = entry, onDelete = { viewModel.delete(entry.id) })
+                        HorizontalDivider()
+                    }
                 }
             }
         }
@@ -111,6 +124,8 @@ private fun MacroSummaryCard(state: OverviewUiState) {
             MacroRow("Protein", state.totalProtein, state.goal.proteinG, "g")
             MacroRow("Kohlenhydrate", state.totalCarbs, state.goal.carbsG, "g")
             MacroRow("Fett", state.totalFat, state.goal.fatG, "g")
+            MacroRowSimple("Zucker", state.totalSugar, "g")
+            MacroRowSimple("Ballaststoffe", state.totalFiber, "g")
         }
     }
 }
@@ -127,6 +142,27 @@ private fun MacroRow(label: String, current: Double, goal: Double, unit: String)
             style = MaterialTheme.typography.bodyMedium,
         )
     }
+}
+
+@Composable
+private fun MacroRowSimple(label: String, value: Double, unit: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+        Text(
+            "${value.toInt()} $unit",
+            style = MaterialTheme.typography.bodyMedium,
+        )
+    }
+}
+
+private fun MealCategory.displayName() = when (this) {
+    MealCategory.BREAKFAST -> "Frühstück"
+    MealCategory.LUNCH -> "Mittagessen"
+    MealCategory.DINNER -> "Abendessen"
+    MealCategory.SNACK -> "Snack"
 }
 
 @Composable

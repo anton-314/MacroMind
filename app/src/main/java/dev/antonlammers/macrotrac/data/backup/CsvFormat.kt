@@ -1,6 +1,7 @@
 package dev.antonlammers.macrotrac.data.backup
 
 import dev.antonlammers.macrotrac.domain.model.FoodEntry
+import dev.antonlammers.macrotrac.domain.model.MealCategory
 import java.time.LocalDate
 
 /**
@@ -19,6 +20,9 @@ object CsvFormat {
         entry.proteinG,
         entry.carbsG,
         entry.fatG,
+        entry.sugarG,
+        entry.fiberG,
+        entry.mealCategory.name,
         entry.timestampMs,
     ).joinToString(",")
 
@@ -41,6 +45,11 @@ object CsvFormat {
             proteinG = cols.dbl(headers, CsvColumns.PROTEIN_G) ?: 0.0,
             carbsG = cols.dbl(headers, CsvColumns.CARBS_G) ?: 0.0,
             fatG = cols.dbl(headers, CsvColumns.FAT_G) ?: 0.0,
+            sugarG = cols.dbl(headers, CsvColumns.SUGAR_G) ?: 0.0,
+            fiberG = cols.dbl(headers, CsvColumns.FIBER_G) ?: 0.0,
+            mealCategory = cols.str(headers, CsvColumns.MEAL_CATEGORY)
+                ?.let { runCatching { MealCategory.valueOf(it) }.getOrNull() }
+                ?: MealCategory.SNACK,
             date = date,
             timestampMs = cols.dbl(headers, CsvColumns.TIMESTAMP_MS)?.toLong()
                 ?: System.currentTimeMillis(),

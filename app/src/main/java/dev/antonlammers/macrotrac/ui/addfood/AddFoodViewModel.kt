@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.antonlammers.macrotrac.domain.model.Food
 import dev.antonlammers.macrotrac.domain.model.FoodEntry
+import dev.antonlammers.macrotrac.domain.model.MealCategory
 import dev.antonlammers.macrotrac.domain.repository.FoodEntryRepository
 import dev.antonlammers.macrotrac.domain.repository.FoodSearchRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +44,8 @@ class AddFoodViewModel @Inject constructor(
 
     fun onAmountChange(amount: String) = _uiState.update { it.copy(amountGrams = amount) }
 
+    fun onMealCategoryChange(category: MealCategory) = _uiState.update { it.copy(mealCategory = category) }
+
     fun confirmAdd() {
         val state = _uiState.value
         val food = state.selectedFood ?: return
@@ -58,6 +61,9 @@ class AddFoodViewModel @Inject constructor(
                     proteinG = food.proteinPer100g * factor,
                     carbsG = food.carbsPer100g * factor,
                     fatG = food.fatPer100g * factor,
+                    sugarG = food.sugarPer100g * factor,
+                    fiberG = food.fiberPer100g * factor,
+                    mealCategory = state.mealCategory,
                     date = LocalDate.now(),
                     timestampMs = System.currentTimeMillis(),
                 )
@@ -93,5 +99,6 @@ data class AddFoodUiState(
     val error: String? = null,
     val selectedFood: Food? = null,
     val amountGrams: String = "100",
+    val mealCategory: MealCategory = MealCategory.SNACK,
     val entryAdded: Boolean = false,
 )
