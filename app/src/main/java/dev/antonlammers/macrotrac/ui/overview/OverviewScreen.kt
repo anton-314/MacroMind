@@ -1,18 +1,28 @@
 package dev.antonlammers.macrotrac.ui.overview
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -28,6 +38,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -35,6 +53,11 @@ import androidx.navigation.NavController
 import dev.antonlammers.macrotrac.domain.model.FoodEntry
 import dev.antonlammers.macrotrac.domain.model.MealCategory
 import dev.antonlammers.macrotrac.ui.navigation.Screen
+import dev.antonlammers.macrotrac.ui.theme.CalorieColor
+import dev.antonlammers.macrotrac.ui.theme.CarbsColor
+import dev.antonlammers.macrotrac.ui.theme.FatColor
+import dev.antonlammers.macrotrac.ui.theme.ProteinColor
+import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -50,9 +73,28 @@ fun OverviewScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(state.date.format(DateTimeFormatter.ofPattern("EEEE, d. MMMM", Locale("de"))))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        IconButton(onClick = viewModel::previousDay) {
+                            Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Vorheriger Tag")
+                        }
+                        Text(
+                            state.date.format(DateTimeFormatter.ofPattern("EEE, d. MMM", Locale("de"))),
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        IconButton(onClick = viewModel::nextDay) {
+                            Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Nächster Tag")
+                        }
+                    }
                 },
                 actions = {
+                    if (state.date != LocalDate.now()) {
+                        TextButton(onClick = viewModel::goToToday) { Text("Heute") }
+                    }
                     TextButton(onClick = { navController.navigate(Screen.Goals.route) }) {
                         Text("Ziele")
                     }
@@ -117,44 +159,138 @@ fun OverviewScreen(
 private fun MacroSummaryCard(state: OverviewUiState) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
-            MacroRow("Kalorien", state.totalKcal, state.goal.kcal, "kcal")
-            MacroRow("Protein", state.totalProtein, state.goal.proteinG, "g")
-            MacroRow("Kohlenhydrate", state.totalCarbs, state.goal.carbsG, "g")
-            MacroRow("Fett", state.totalFat, state.goal.fatG, "g")
-            MacroRowSimple("Zucker", state.totalSugar, "g")
-            MacroRowSimple("Ballaststoffe", state.totalFiber, "g")
+            CalorieRing(current = state.totalKcal, goal = state.goal.kcal)
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                MacroBar("Protein", state.totalProtein, state.goal.proteinG, "g", ProteinColor)
+                MacroBar("Kohlenhydrate", state.totalCarbs, state.goal.carbsG, "g", CarbsColor)
+                MacroBar("Fett", state.totalFat, state.goal.fatG, "g", FatColor)
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                SecondaryMacro("Zucker", state.totalSugar, "g")
+                SecondaryMacro("Ballaststoffe", state.totalFiber, "g")
+            }
         }
     }
 }
 
 @Composable
-private fun MacroRow(label: String, current: Double, goal: Double, unit: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-        Text(
-            "${current.toInt()} / ${goal.toInt()} $unit",
-            style = MaterialTheme.typography.bodyMedium,
-        )
+private fun CalorieRing(current: Double, goal: Double) {
+    val progress = if (goal > 0) (current / goal).toFloat().coerceIn(0f, 1f) else 0f
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 900),
+        label = "calorie_ring",
+    )
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(160.dp)) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val strokeWidth = 18.dp.toPx()
+            val diameter = size.minDimension - strokeWidth
+            val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+            val arcSize = Size(diameter, diameter)
+
+            drawArc(
+                color = trackColor,
+                startAngle = -90f,
+                sweepAngle = 360f,
+                useCenter = false,
+                topLeft = topLeft,
+                size = arcSize,
+                style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+            )
+            if (animatedProgress > 0f) {
+                drawArc(
+                    color = CalorieColor,
+                    startAngle = -90f,
+                    sweepAngle = 360f * animatedProgress,
+                    useCenter = false,
+                    topLeft = topLeft,
+                    size = arcSize,
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round),
+                )
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "${current.toInt()}",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Text("kcal", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                "von ${goal.toInt()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 
 @Composable
-private fun MacroRowSimple(label: String, value: Double, unit: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodyMedium)
+private fun MacroBar(label: String, current: Double, goal: Double, unit: String, color: Color) {
+    val progress = if (goal > 0) (current / goal).toFloat().coerceIn(0f, 1f) else 0f
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress,
+        animationSpec = tween(durationMillis = 900),
+        label = "${label}_bar",
+    )
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(label, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
+            Text(
+                "${current.toInt()} / ${goal.toInt()} $unit",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(RoundedCornerShape(50))
+                .background(color.copy(alpha = 0.2f)),
+        ) {
+            if (animatedProgress > 0f) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(animatedProgress)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(50))
+                        .background(color),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SecondaryMacro(label: String, value: Double, unit: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             "${value.toInt()} $unit",
             style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium,
         )
+        Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 

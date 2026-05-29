@@ -9,3 +9,8 @@ val Pink80 = Color(0xFFEFB8C8)
 val Purple40 = Color(0xFF6650a4)
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = Color(0xFF7D5260)
+
+val CalorieColor = Color(0xFFFFAB76)
+val ProteinColor = Color(0xFF82C8F5)
+val CarbsColor   = Color(0xFF82D48A)
+val FatColor     = Color(0xFFE8A4D4)

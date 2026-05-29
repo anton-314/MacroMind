@@ -110,6 +110,53 @@ class OverviewViewModelTest {
         }
     }
 
+    @Test
+    fun `previousDay shows entries from yesterday`() = runTest {
+        val yesterday = LocalDate.now().minusDays(1)
+        foodEntryRepo.add(buildEntry(kcal = 400.0, date = yesterday))
+
+        viewModel.uiState.test {
+            awaitItem() // today, empty
+
+            viewModel.previousDay()
+            val state = awaitItem()
+
+            assertEquals(yesterday, state.date)
+            assertEquals(1, state.entries.size)
+            assertEquals(400.0, state.totalKcal, 0.001)
+        }
+    }
+
+    @Test
+    fun `nextDay navigates to tomorrow and shows no entries`() = runTest {
+        val tomorrow = LocalDate.now().plusDays(1)
+
+        viewModel.uiState.test {
+            awaitItem() // today
+
+            viewModel.nextDay()
+            val state = awaitItem()
+
+            assertEquals(tomorrow, state.date)
+            assertTrue(state.entries.isEmpty())
+        }
+    }
+
+    @Test
+    fun `goToToday returns to today from a different date`() = runTest {
+        viewModel.uiState.test {
+            awaitItem() // today
+
+            viewModel.previousDay()
+            awaitItem() // yesterday
+
+            viewModel.goToToday()
+            val state = awaitItem()
+
+            assertEquals(LocalDate.now(), state.date)
+        }
+    }
+
     private fun buildEntry(kcal: Double, date: LocalDate) = FoodEntry(
         foodName = "Testessen",
         brand = null,
