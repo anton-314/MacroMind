@@ -5,8 +5,13 @@ A minimalistic, open-source calorie and nutrient tracking app for Android.
 ## Features
 
 - Log meals by searching the [Open Food Facts](https://world.openfoodfacts.org/) database or scanning a barcode
-- Daily overview of calories, protein, carbs, and fat vs. your goals
+- **Recently eaten** shortcuts — the last 15 distinct foods appear instantly when you open the food search
+- Daily overview with animated calorie ring and pastel-colored progress bars for protein, carbs, and fat
+- **Navigate between days** — track past meals or plan ahead; jump back to today with one tap
+- **Weight tracking** — log today's weight directly from the overview with a single tap
+- **Stats screen** — calorie bar chart + weight line chart for the last 7 days, 30 days, or 1 year
 - Set your own daily macro targets
+- CSV export and import for full data portability
 - All data stored locally — no account, no cloud
 
 ## Download
